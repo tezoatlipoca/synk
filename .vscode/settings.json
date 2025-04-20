@@ -1,0 +1,6 @@
+// filepath: /home/tezoatlipoca/synk/.vscode/settings.json
+{
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.enableEditorConfigSupport": true,
+  "dotnet.server.useOmnisharp": true
+}

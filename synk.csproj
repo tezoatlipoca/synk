@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+     <!--<RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>-->
+     <RuntimeIdentifiers>win-x64;linux-x64;win-x86;linux-arm;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+     <PublishSingleFile>true</PublishSingleFile>
+     <PublishTrimmed>true</PublishTrimmed>
+     <SelfContained>true</SelfContained>
+  </PropertyGroup>
+<PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Specify the version prefix (major.minor.patch) -->
+    <VersionPrefix>0.0.1</VersionPrefix>
+    <!-- Specify the version suffix (pre-release label) -->
+    <VersionSuffix>beta</VersionSuffix>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+</Project>
