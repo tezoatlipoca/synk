@@ -1,4 +1,5 @@
 # synk
+
 ## An anonymous key oriented, self-hosted data synchronization dropbox. 
 
 An ASP.NET single binary microwebservice that can store and retreive data using a unique key.
@@ -7,6 +8,10 @@ between instances of your program when direct synchronous communication isn't po
 What information you PUT or GET is up to you; so long as you use the correct key, any one 
 or thing can access the shared data. The key might be data decryption keys, or GUIDs, 
 or whatever makes sense to your application.
+
+`synk` only provides a file based asynchronous data dropbox; stored data is written
+as-is to the backing store; if/how you encrypt it, how you prevent data trampling
+is entirely up to you. 
 
 Two endpoints:
 
