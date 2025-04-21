@@ -25,7 +25,7 @@ and the body of your response will be the contents of the file at `$synkstore/<S
 
 - `{key}` has to be URL encoded
 - URLunencoded, `{key}` can be at most 512 bytes long - but this is just long enough to be an RSA key.
-- No restriction on WHAT you use for `{key}` - it could be a GUID
+- No restriction on WHAT you use for `{key}` - it could be a GUID, RSA or ECDSA key.
 - `$synkstore` is configurable (but no size restrictions are enforced - yet)
 
 ## Usage
