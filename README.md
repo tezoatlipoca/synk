@@ -87,3 +87,11 @@ or existing cloud synchronization platforms like Dropbox, I
 The idea is that I can configure my `synk` instance and a shared `key` on all of my computers
 and when needed simply get/put data on demand. I can now add rudimentary synchronization metadata
 to whatever I want to store.
+
+## How is this not Redis/Valkey with an API up front? 
+The blobs themselves aren't stored in memory; only a Dictionary of key+blob_file_hashs. Redis usually requires
+2-3x the data storage in RAM; this way RAM is minimal, you're limited by nonvolatile storage space.
+(at perhaps the sake of speed, there's no caching of blob data)
+Each blob_file_hash and key is 64 bytes, so each stashed blob consumes 128 bytes, so 8.4M keys per 1GB of RAM
+And one less dependency; Redis and Valkey are very good and tackle a whole lot of problems
+that this is not intended to solve. 
