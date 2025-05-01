@@ -49,9 +49,9 @@ Options:
 
 ## Data Privacy
 `synk` does not know, or care about what data you store - whether its encrypted, ascii or binary; it just writes the bytes you give it to disk.
-As such, the blobs in the `synkstore` are _tehnically_ visible to the server/admin. 
+As such, the blobs in the `synkstore` are _technically_ visible to the server/admin. 
 A list of all "valid" keys and associated blobs is maintained in the `synkstore`, but there is no way to obtain the keys without access to 
-that folder. Having said that, if people use very short keys (e.g. `abc123`) it is possible, in theory for someone to bruteforce guess
+that folder. Having said that, if people use very short keys (e.g. `abc123`) it is possible, in theory, for someone to bruteforce guess
 one and see whatever is stored there, but if keys longer than the recommended 16 bytes are used, this becomes unlikely. 
 
 Ultimately however, if you know the a valid key, you can retreive the data stored against it. 
