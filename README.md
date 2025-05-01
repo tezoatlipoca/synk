@@ -2,16 +2,17 @@
 
 ## An anonymous key oriented, self-hosted data synchronization dropbox. 
 
-An ASP.NET single binary microwebservice that can store and retreive data using a unique key.
-Intended as a simple, self-hosted way to provide built in _data synchronization_ services 
-between instances of your program when direct synchronous communication isn't possible. 
+An ASP.NET single binary microwebservice that can store and retreive data using unique keys.
+Intended as a simple, self-hosted way to 
+* provide _data synchronization_ services between nodes of an application that know a shared key
+* provide anonymous, arbitrary data dropbox facilities using a secret key as part of the URI
+
 What information you PUT or GET is up to you; so long as you use the correct key, any one 
 or thing can access the shared data. The key might be data decryption keys, or GUIDs, 
-or whatever makes sense to your application.
+or whatever makes sense to you.
 
-`synk` only provides a file based asynchronous data dropbox; stored data is written
-as-is to the backing store; if/how you encrypt it, how you prevent data trampling
-is entirely up to you. 
+`synk` does not know or care what data you store, whether you encrypt it or not, or how 
+you prevent data trampling - is entirely up to you. 
 
 Two endpoints:
 
@@ -22,11 +23,14 @@ and the body of your request will be saved in a file at `$synkstore/<SHA256 hash
 and the body of your response will be the contents of the file at `$synkstore/<SHA256 has of key>`
 
 `HTTP 204` is returned if `{key}` is invalid or there is no data stored for `{key}`.
+`HTTP 413` or `Payload Too Large` is returned if you try and `PUT` to a `{key}` but its size exceeds the configured storage space. 
 
 - `{key}` has to be URL encoded
 - URLunencoded, `{key}` can be at most 512 bytes long - but this is just long enough to be an RSA key.
 - No restriction on WHAT you use for `{key}` - it could be a GUID, RSA or ECDSA key.
-- `$synkstore` is configurable (but no size restrictions are enforced - yet)
+- `$synkstore` is configurable as is how _large_ it can be.
+- If the size of the `$synkstore` is larger than `maxsynkstoresize` on startup you get a warning but everything still works; you may not be able to upload anything else.
+- Setting `maxsynkstoresize` to `0` and restarting, effectively sets your `synk` node to READ ONLY. 
 
 ## Usage
 ```
@@ -39,10 +43,31 @@ Options:
 --sitecss=URL		URL to the site stylesheet. Default is null
 --sitepng=URL		URL to the site favicon.ico. Default is null
 --synkstore=PATH		  Path to the blob store. Default is <working directory>/.synkstore)
+--maxsynkstoresize=BYTES  Maximum size of the synkstore in bytes. Default is 10MB.
+--siteinfo=<about YOU>  Is displayed on the /About page - so people can reach you. 
 ```
 
+## Data Privacy
+`synk` does not know, or care about what data you store - whether its encrypted, ascii or binary; it just writes the bytes you give it to disk.
+As such, the blobs in the `synkstore` are _tehnically_ visible to the server/admin. 
+A list of all "valid" keys and associated blobs is maintained in the `synkstore`, but there is no way to obtain the keys without access to 
+that folder. Having said that, if people use very short keys (e.g. `abc123`) it is possible, in theory for someone to bruteforce guess
+one and see whatever is stored there, but if keys longer than the recommended 16 bytes are used, this becomes unlikely. 
+
+Ultimately however, if you know the a valid key, you can retreive the data stored against it. 
+
+There is no way (currently) to delete a key and its associate blob file - but yo can overwrite it with garbage. 
+
+## Synkstore Blob Consideration
+The default `maxsynkstoresize` is `10485760` bytes or 10MB. On startup `synk` does some housecleaning and reindexes all the blobs and keys and gets rid of orphans (not that there should be); it also calculates the _size_ of all blobs. If the byte size of all existing blobs is greater than `maxsynkstoresize`, you get a warning, but 
+the application continues; you simply won't be allowed to add anything else. The side effect of this is to make your instance effectively read only. 
+Key data blob files cannot be deleted (yet), but they can be overwritten by _smaller_ data blobs. 
+
 ## Future Work
+- DELete keys (and their blobs)
 - better IP logging
-- `$synkstore` folder size restriction
 - IP whitelisting
 - provide additional restrictions/gatekeeping - right now anyone can store anything.
+- further obsfucate (hash?) the data written to disk so the server/admin cannot see the content.
+- HARD_MODE - where not even the key->filenames are known to the server/admin.
+- add data retention limits; prune older keys etc.; allow to set an expiry on a key when "touched". 
