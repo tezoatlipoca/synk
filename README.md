@@ -71,3 +71,19 @@ Key data blob files cannot be deleted (yet), but they can be overwritten by _sma
 - further obsfucate (hash?) the data written to disk so the server/admin cannot see the content.
 - HARD_MODE - where not even the key->filenames are known to the server/admin.
 - add data retention limits; prune older keys etc.; allow to set an expiry on a key when "touched". 
+
+## Why are you doing this? 
+"You're effectively writing your own cloud storage, you're insane" - I know, fun, right?
+I was writing a terminal program and wanted a way to synchronize configuration parameters between the 
+same program across multiple computers. There are TONS of utilities and services that do this
+of course, but unlike client-server, p2p like Portal (https://github.com/SpatiumPortae/portal)
+or existing cloud synchronization platforms like Dropbox, I 
+* didn't want to prompt for or store login credentials
+* didn't want to generate magic/secrets every time
+* wanted to use a self-hosted solution
+* not have to rely on a "synchronization" process.
+.. and so, voila.
+
+The idea is that I can configure my `synk` instance and a shared `key` on all of my computers
+and when needed simply get/put data on demand. I can now add rudimentary synchronization metadata
+to whatever I want to store.
