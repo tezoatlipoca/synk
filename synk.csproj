@@ -5,9 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
      <!--<RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>-->
      <RuntimeIdentifiers>win-x64;linux-x64;win-x86;linux-arm;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
-     <PublishSingleFile>true</PublishSingleFile>
+     <PublishSingleFile>false</PublishSingleFile>
      <PublishTrimmed>true</PublishTrimmed>
      <SelfContained>true</SelfContained>
+     <PublishAoT>true</PublishAoT>
   </PropertyGroup>
 <PropertyGroup>
     <OutputType>Exe</OutputType>

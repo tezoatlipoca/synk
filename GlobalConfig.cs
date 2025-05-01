@@ -18,12 +18,12 @@ public static class GlobalConfig
 
     public static string? bldVersion { get; set; }
 
-
+    public static string? siteInformation { get; set; } = null;
     public static string? sitecss { get; set; } = null;
     public static string? sitepng { get; set; } = null;
 
     public static string? synkStore { get; set; } = null;
-    public static int synkStoreSize { get; set; } = 100 * 1024 * 1024; // 100MB
+    public static long maxSynkStoreSize { get; set; } = 10 * 1024 * 1024; // 10MB in BYTES
 
     // parses the command line arguments
     public static bool CommandLineParse(string[] args)
@@ -39,6 +39,9 @@ public static class GlobalConfig
         foreach (var arg in args)
         {
             var splitArg = arg.Split('=');
+
+
+            DBg.d(LogLevel.Trace, $"Startup command line argument {arg} split into {splitArg[0]} and {splitArg[1]}");
             switch (splitArg[0])
             {
                 case "--port":
@@ -72,15 +75,38 @@ public static class GlobalConfig
                     Console.WriteLine("--sitecss=URL\t\t\tURL to the site stylesheet. Default is null");
                     Console.WriteLine("--sitepng=URL\t\t\tURL to the site favicon.ico. Default is null");
                     Console.WriteLine("--synkstore=PATH\t\tPath to the blob store. Default is null (for .///.synkstore)");
-                    Console.WriteLine("--synkstoresize=SIZE\tMax Size of the blob store. Default is 100MB");
+                    Console.WriteLine("--maxsynkstoresize=SIZE\tMax Size of the blob store in BYTES. Default is 10MB");
+                    Console.WriteLine("--siteinfo=\"Yor info here\" <- this goes on the About Page");
                     Environment.Exit(0);
                     break;
                 case "--synkstore":
+                    DBg.d(LogLevel.Debug, $"Synk store: {splitArg[1]}");
                     synkStore = splitArg[1];
 
                     break;
-                case "--synkstoresize":
-                    synkStoreSize = int.Parse(splitArg[1]) * 1024 * 1024;
+                case "--maxsynkstoresize":
+                    DBg.d(LogLevel.Debug, $"Max synk store size: {splitArg[1]}");
+                    try
+                    {
+                        maxSynkStoreSize = long.Parse(splitArg[1]);
+                    }
+                    catch (FormatException ex)
+                    {
+                        DBg.d(LogLevel.Error, $"Invalid format for maxSynkStoreSize: {splitArg[1]}. {ex.Message}");
+                        DBg.d(LogLevel.Error, $"Using default value: {GlobalStatic.PrettySize(maxSynkStoreSize)}");
+                    }
+                    catch (OverflowException ex)
+                    {
+                        DBg.d(LogLevel.Error, $"Value for maxSynkStoreSize is too large or too small: {splitArg[1]}. {ex.Message}");
+                        DBg.d(LogLevel.Error, $"Using default value: {GlobalStatic.PrettySize(maxSynkStoreSize)}");
+                    
+                    }
+                    break;
+                case "--siteinfo":
+                    DBg.d(LogLevel.Debug, $"Site information: {splitArg[1]}");
+                    siteInformation = splitArg[1];
+                    // sterilize the string, its going to be used in HTML
+                    
                     break;
                 default:
                     DBg.d(LogLevel.Warning, $"Unexpected command line argument: {splitArg[0]}");
@@ -105,10 +131,36 @@ public static class GlobalConfig
         DBg.d(LogLevel.Information, $"Admin page favicon.ico: {sitepng}");
 
 
-        // lastly get the AssemblyInformationalVersion attribute from the assembly and store it in a static variable
+        /// lastly get the AssemblyInformationalVersion attribute from the assembly and store it in a static variable
         var bldVersionAttribute = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>();
         // convert it to a string and store it in a static variable
-        bldVersion = bldVersionAttribute?.InformationalVersion;
+        if (bldVersionAttribute?.InformationalVersion != null)
+        {
+            string fullVersion = bldVersionAttribute.InformationalVersion;
+            
+            // Check if the version contains a '+' which separates version from git hash
+            int plusIndex = fullVersion.IndexOf('+');
+            if (plusIndex >= 0 && plusIndex < fullVersion.Length - 1)
+            {
+                // Extract the base version and git hash
+                string baseVersion = fullVersion.Substring(0, plusIndex);
+                string gitHash = fullVersion.Substring(plusIndex + 1);
+                
+                // Truncate git hash to 7 characters if it's longer
+                if (gitHash.Length > 7)
+                {
+                    gitHash = gitHash.Substring(0, 7);
+                }
+                
+                // Combine the base version with the truncated git hash
+                bldVersion = $"{baseVersion}+{gitHash}";
+            }
+            else
+            {
+                // If there's no git hash or the format is different, use the full version
+                bldVersion = fullVersion;
+            }
+        }
 
         // did we get a value for blobStore?
         if (synkStore == null)
@@ -154,10 +206,10 @@ public static class GlobalConfig
         if( Directory.Exists(synkStore))
         {
             var dirInfo = new DirectoryInfo(synkStore);
-            long size = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
-            if (size > synkStoreSize)
+            long size = GlobalStatic.synkStoreSize();
+            if (size > maxSynkStoreSize)
             {
-                DBg.d(LogLevel.Warning, $"Blob store directory {synkStore} is larger than {synkStoreSize / 1024 / 1024}MB. No new blobs can be stored.");
+                DBg.d(LogLevel.Warning, $"Blob store directory {synkStore} is larger than {maxSynkStoreSize / 1024 / 1024}MB. No new blobs can be stored.");
             }
         }
         

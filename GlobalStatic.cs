@@ -4,7 +4,7 @@ using System.Text;
 public static class GlobalStatic
 {
     public static string applicationName = "synk";
- 
+
     public static string webSite = "https://github.com/tezoatlipoca/synk";
 
 
@@ -39,7 +39,7 @@ public static class GlobalStatic
         sb.AppendLine("</head>");
         sb.AppendLine("<body >");
         sb.AppendLine($"<h1>{title}</h1>");
-        sb.AppendLine("<p><a href=\"/\">Home</a></p>");
+        //sb.AppendLine("<p><a href=\"/\">Home</a></p>");
         sb.AppendLine("<span class=\"results\" style=\"color: red;\"></span>");
     }
 
@@ -74,14 +74,46 @@ public static class GlobalStatic
     // }
 
     public static string SHA256(string input)
+    {
+        using (var sha256 = System.Security.Cryptography.SHA256.Create())
         {
-            using (var sha256 = System.Security.Cryptography.SHA256.Create())
-            {
-                byte[] bytes = System.Text.Encoding.UTF8.GetBytes(input);
-                byte[] hash = sha256.ComputeHash(bytes);
-                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-            }
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(input);
+            byte[] hash = sha256.ComputeHash(bytes);
+            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         }
+    }
+
+    public static long synkStoreSize()
+    {
+        string fn = "synkStoreSize";
+        DBg.d(LogLevel.Trace, fn);
+        // get the size of the synkStore
+        // if it is larger than maxSynkStoreSize, return 1
+        // else return 0
+        if (GlobalConfig.synkStore != null)
+        {
+            var dir = new DirectoryInfo(GlobalConfig.synkStore);
+            long size = dir.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+            DBg.d(LogLevel.Debug, $"Blob store directory {GlobalConfig.synkStore} size: {GlobalStatic.PrettySize(size)}");
+            return size;
+
+        }
+        return 0;
+    }
+
+    // Add this to a utility class, e.g., GlobalStatic
+    public static string PrettySize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
 
 }
 
