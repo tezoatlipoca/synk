@@ -40,8 +40,8 @@ Options:
 --bind=IP			  IP address to bind to. Default is *
 --hostname=URL	URL to use in links. Default is http://localhost
 --runlevel=LEVEL			Log level. Default is Information
---sitecss=URL		URL to the site stylesheet. Default is null
---sitepng=URL		URL to the site favicon.ico. Default is null
+--sitecss=URL		URL to the site stylesheet. Default is null (UNTESTED)
+--sitepng=URL		URL to the site favicon.ico. Default is null (UNTESTED)
 --synkstore=PATH		  Path to the blob store. Default is <working directory>/.synkstore)
 --maxsynkstoresize=BYTES  Maximum size of the synkstore in bytes. Default is 10MB.
 --siteinfo=<about YOU>  Is displayed on the /About page - so people can reach you. 
