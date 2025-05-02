@@ -1,11 +1,18 @@
 using System.Text;
-
+using System.IO.Compression;
+using System.Security.Cryptography;
 
 public static class GlobalStatic
 {
     public static string applicationName = "synk";
 
     public static string webSite = "https://github.com/tezoatlipoca/synk";
+
+    public static string? staticAboutPage = null;
+
+    public static bool validWordList = false;
+    public static string wordListFile = "words_alpha.txt";
+    public static string wordListZipFile = "words_alpha.zip";
 
 
     // generates everything from the footer to the closing html tag
@@ -29,11 +36,15 @@ public static class GlobalStatic
         sb.AppendLine("<meta charset=\"utf-8\">");
         if (GlobalConfig.sitecss != null)
         {
-            sb.AppendLine($"<link rel=\"stylesheet\" type=\"text/css\" href=\"/{GlobalConfig.sitecss}\">");
+            // original line: includes css by reference
+            //sb.AppendLine($"<link rel=\"stylesheet\" type=\"text/css\" href=\"/{GlobalConfig.sitecss}\">");
+            sb.AppendLine("<style>");
+            sb.AppendLine(GlobalConfig.sitecss);
+            sb.AppendLine("</style>");
         }
         if (GlobalConfig.sitepng != null)
         {
-            sb.AppendLine($"<link rel=\"icon\" href=\"/{GlobalConfig.sitepng}\" type=\"image/x-icon\">");
+            sb.AppendLine($"<link rel=\"icon\" href=\"{GlobalConfig.sitepng}\" type=\"image/png\">");
         }
         sb.AppendLine($"<title>{GlobalConfig.Hostname} - {title}</title>");
         sb.AppendLine("</head>");
@@ -83,6 +94,13 @@ public static class GlobalStatic
         }
     }
 
+    public static string RandomHexKey(int bytes = 8)
+    {
+        var buffer = new byte[bytes];
+        RandomNumberGenerator.Fill(buffer);
+        return BitConverter.ToString(buffer).Replace("-", "").ToLower();
+    }
+
     public static long synkStoreSize()
     {
         string fn = "synkStoreSize";
@@ -115,5 +133,103 @@ public static class GlobalStatic
         return $"{len:0.##} {sizes[order]}";
     }
 
+    public static void GenerateAboutPage()
+    {
+        DBg.d(LogLevel.Trace, "GenerateAboutPage");
+        // get all the lists
+        StringBuilder sb = new StringBuilder();
+        GlobalStatic.GenerateHTMLHead(sb, "About Synk");
+        sb.AppendLine("<p><code>synk</code> is a simple, single binary self-hosted webservice that allows anonymous key-based data storage and retrieval.</p>");
+        sb.AppendLine("<p>To use it, make a <code>PUT</code> request to:</p>");
+        sb.AppendLine($"<pre>{GlobalConfig.Hostname}/blob/{{key}}</pre>");
+        sb.AppendLine("<p>To get the same data back, make a <code>GET</code> request to the same URL.</p>");
+        sb.AppendLine("<p>For example, using <code>curl</code>:</p>");
+        sb.AppendLine($"<pre><code>curl -X PUT \"{GlobalConfig.Hostname}/blob/abc123\" --data-binary @excellent.meme.png</code></pre>");
+        sb.AppendLine("<p>uploads a file to key <code>abc123</code> (obviously you'd want something better than that). And to retrieve:</p>");
+        sb.AppendLine($"<pre><code>curl \"{GlobalConfig.Hostname}/blob/abc123\" --output &lt;FILE&gt;</code></pre>");
+        sb.AppendLine("<p>It's up to you to know <em>what</em> data is stored at that key - no metadata about the payload is provided when you upload, so no metadata about it is available when you retrieve it.</p>");
+        sb.AppendLine("<p>If you <code>GET</code> a key using a web browser, it will likely just write an extension-less <code>{key}</code> named file to your Downloads folder.</p>");
+        sb.AppendLine("<ul>");
+        sb.AppendLine("<li>If you <code>PUT</code> using an existing key, you overwrite the data.</li>");
+        sb.AppendLine($"<li>If the size of what you <code>PUT</code> is too big, you get <code>HTTP 413 Payload Too Large</code> - the size of the \"synkstore\" is configurable by the owner (here it is {GlobalStatic.PrettySize(GlobalConfig.maxSynkStoreSize)}).</li>");
+        sb.AppendLine("<li><code>{key}</code>s can be whatever you like up to 512 bytes long (good enough for most crypto keys).</li>");
+        sb.AppendLine("<ul>");
+        sb.AppendLine("<li>But as a good practice, it should be at least 16 bytes long.</li>");
+        sb.AppendLine("<li>As a convenience, there is <a href=\"/key\">/key</a> which generates GUIDs.</li>");
+        sb.AppendLine("</ul>");
+        sb.AppendLine("<li>Data is retrieved exactly as it is stored - if you <code>GET</code> a valid key, you <code>GET</code> the data.</li>");
+        sb.AppendLine("<li>But YOU can always encrypt the data before you store it with the <em>key</em>.</li>");
+        sb.AppendLine("</ul>");
+        sb.AppendLine($"<p>This <code>synk</code> instance is provided by {GlobalConfig.siteInformation}</p>");
+        GlobalStatic.GeneratePageFooter(sb);
+        staticAboutPage = sb.ToString();
+    }
+
+    public static void extractWordList()
+    {
+        DBg.d(LogLevel.Trace, "extractWordList");
+
+        DBg.d(LogLevel.Debug, $"Checking for {wordListFile} and {wordListZipFile}");
+        // Check if words_alpha.txt already exists
+        if (File.Exists(wordListFile))
+        {
+            DBg.d(LogLevel.Information, $"{wordListFile} already exists. Using the existing file.");
+            validWordList = true;
+            return;
+        }
+
+        // Check if words_alpha.zip exists
+        if (File.Exists(wordListZipFile))
+        {
+            try
+            {
+                using (var archive = ZipFile.OpenRead(wordListZipFile))
+
+                {
+                    var entry = archive.GetEntry(wordListFile);
+                    if (entry != null)
+                    {
+                        entry.ExtractToFile(wordListFile, overwrite: false);
+                        DBg.d(LogLevel.Information, $"{wordListFile} extracted successfully.");
+                        validWordList = true;
+                    }
+                    else
+                    {
+                        DBg.d(LogLevel.Error, $"Entry words_alpha.txt not found in {wordListZipFile}.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DBg.d(LogLevel.Error, $"Error extracting {wordListZipFile}: {ex.Message}");
+            }
+        }
+        else
+        {
+            DBg.d(LogLevel.Warning, $"{wordListZipFile} not found. Cannot extract word list.");
+        }
+    }
+
+    public static string ThreeWords()
+    {
+        string fn = "ThreeWords"; DBg.d(LogLevel.Trace, fn);
+        if (validWordList)
+        {
+            string[] words = File.ReadAllLines(wordListFile);
+            Random random = new Random();
+            var selected = new string[3];
+            for (int i = 0; i < 3; i++)
+            {
+                int index = random.Next(words.Length);
+                selected[i] = words[index];
+            }
+            return string.Join("-", selected);
+        }
+        else
+        {
+            DBg.d(LogLevel.Error, "Word list is not valid.");
+            return "";
+        }
+    }
 }
 

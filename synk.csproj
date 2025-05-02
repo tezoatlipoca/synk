@@ -13,11 +13,35 @@
 <PropertyGroup>
     <OutputType>Exe</OutputType>
     <!-- Specify the version prefix (major.minor.patch) -->
-    <VersionPrefix>0.0.1</VersionPrefix>
+    <VersionPrefix>0.1.0</VersionPrefix>
     <!-- Specify the version suffix (pre-release label) -->
-    <VersionSuffix>beta</VersionSuffix>
+    <VersionSuffix></VersionSuffix>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <DebugType>none</DebugType>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Content Remove="external/english-words/**" />
+    <None Remove="external/english-words/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="external/english-words/words_alpha.zip">
+      <Link>words_alpha.zip</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Remove="synkstore/**" />
+    <None Remove="synkstore/**" />
+  </ItemGroup>
+<ItemGroup>
+    <Content Include="icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="synk_test.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

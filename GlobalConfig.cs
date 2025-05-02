@@ -61,16 +61,20 @@ public static class GlobalConfig
                     break;
                 case "--sitecss":
                     sitecss = splitArg[1];
+                    DBg.d(LogLevel.Information, $"Admin page stylesheet: {sitecss}");
+                    readStyleSheet(sitecss);
                     break;
                 case "--sitepng":
                     sitepng = splitArg[1];
+                    DBg.d(LogLevel.Information, $"Admin page favicon.ico (png file): {sitepng}");
+                    readSitePNG(sitepng);
                     break;
                 case "--help":
                     Console.WriteLine("Usage: ./synk(.exe) -- [options]");
                     Console.WriteLine("Options:");
                     Console.WriteLine("--port=PORT\t\t\tPort to listen on. Default is 5000");
                     Console.WriteLine("--bind=IP\t\t\tIP address to bind to. Default is *");
-                    Console.WriteLine("--hostname=URL\t\t\tURL to use in links. Default is http://localhost");
+                    Console.WriteLine("--hostname=URL\t\t\tURL to use in links. Default is http://localhost - INCLUDE http[s]:// and any external port");
                     Console.WriteLine("--runlevel=LEVEL\t\t\tLog level. Default is Information");
                     Console.WriteLine("--sitecss=URL\t\t\tURL to the site stylesheet. Default is null");
                     Console.WriteLine("--sitepng=URL\t\t\tURL to the site favicon.ico. Default is null");
@@ -125,11 +129,6 @@ public static class GlobalConfig
             isSecure = true;
         }
         DBg.d(LogLevel.Information, $"Hostname: {Hostname}");
-
-
-        DBg.d(LogLevel.Information, $"Admin page stylesheet: {sitecss}");
-        DBg.d(LogLevel.Information, $"Admin page favicon.ico: {sitepng}");
-
 
         /// lastly get the AssemblyInformationalVersion attribute from the assembly and store it in a static variable
         var bldVersionAttribute = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>();
@@ -213,8 +212,9 @@ public static class GlobalConfig
             }
         }
         
-
-
+        // generate the static About page:
+        GlobalStatic.GenerateAboutPage();
+        GlobalStatic.extractWordList();
         return true;
 
     }
@@ -248,8 +248,49 @@ public static class GlobalConfig
 
         }
         return returnLevel;
+    }
 
+    public static void readStyleSheet(string path2css)
+    {
+        // read the css file and store it in a string
+        // this is used to generate the admin page
+        // we need to make sure that the file exists and is readable
+        if (File.Exists(path2css))
+        {
+            try
+            {
+                sitecss = File.ReadAllText(path2css);
+            }
+            catch (Exception ex)
+            {
+                DBg.d(LogLevel.Error, $"Failed to read css file {path2css}. {ex}");
+            }
+        }
+        else
+        {
+            DBg.d(LogLevel.Error, $"CSS file {path2css} does not exist.");
+        }
+    }
 
+    public static void readSitePNG(string path2png)
+    {
+        if (File.Exists(path2png))
+        {
+            try
+            {
+                byte[] bytes = File.ReadAllBytes(path2png);
+                string base64 = Convert.ToBase64String(bytes);
+                sitepng = $"data:image/png;base64,{base64}";
+            }
+            catch (Exception ex)
+            {
+                DBg.d(LogLevel.Error, $"Failed to read PNG file {path2png}. {ex}");
+            }
+        }
+        else
+        {
+            DBg.d(LogLevel.Error, $"PNG file {path2png} does not exist.");
+        }
     }
 }
 

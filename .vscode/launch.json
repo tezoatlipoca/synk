@@ -11,7 +11,11 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/bin/Debug/net8.0/linux-x64/synk",
-            "args": ["--synkstore=/home/tezoatlipoca/synk/synkstore", "--maxsynkstoresize=A9*&", "--siteinfo=\"Your contact info here @tezoatlipoca@mas.to\""],
+            "args": ["--synkstore=/home/tezoatlipoca/synk/synkstore", 
+                    "--maxsynkstoresize=A9*&", 
+                    "--siteinfo=\"Your contact info here @tezoatlipoca@mas.to\"",
+                    "--sitecss=./synk_test.css",
+                    "--sitepng=./icon.png"],
             
             "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

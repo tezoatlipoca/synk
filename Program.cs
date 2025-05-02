@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.AspNetCore.HttpOverrides;
 using synk;
 
@@ -34,32 +33,8 @@ app.UseRouting();
 app.MapGet("/about", (HttpContext httpContext) =>
 {
     string fn = "/about"; DBg.d(LogLevel.Trace, fn);
-    StringBuilder sb = new StringBuilder();
-    GlobalStatic.GenerateHTMLHead(sb, "About Synk");
-    sb.AppendLine("<p><code>synk</code> is a simple, single binary self-hosted webservice that allows anonymous key-based data storage and retrieval.</p>");
-    sb.AppendLine("<p>To use it, make a <code>PUT</code> request to:</p>");
-    sb.AppendLine($"<pre>{GlobalConfig.Hostname}/blob/{{key}}</pre>");
-    sb.AppendLine("<p>To get the same data back, make a <code>GET</code> request to the same URL.</p>");
-    sb.AppendLine("<p>For example, using <code>curl</code>:</p>");
-    sb.AppendLine($"<pre><code>curl -X PUT \"http://{GlobalConfig.Hostname}/blob/abc123\" --data-binary @excellent.meme.png</code></pre>");
-    sb.AppendLine("<p>uploads a file to key <code>abc123</code> (obviously you'd want something better than that). And to retrieve:</p>");
-    sb.AppendLine($"<pre><code>curl \"http://{GlobalConfig.Hostname}/blob/abc123\" --output &lt;FILE&gt;</code></pre>");
-    sb.AppendLine("<p>It's up to you to know <em>what</em> data is stored at that key - no metadata about the payload is provided when you upload, so no metadata about it is available when you retrieve it.</p>");
-    sb.AppendLine("<p>If you <code>GET</code> a key using a web browser, it will likely just write an extension-less <code>{key}</code> named file to your Downloads folder.</p>");
-    sb.AppendLine("<ul>");
-    sb.AppendLine("<li>If you <code>PUT</code> using an existing key, you overwrite the data.</li>");
-    sb.AppendLine($"<li>If the size of what you <code>PUT</code> is too big, you get <code>HTTP 413 Payload Too Large</code> - the size of the \"synkstore\" is configurable by the owner (here it is {GlobalStatic.PrettySize(GlobalConfig.maxSynkStoreSize)}).</li>");
-    sb.AppendLine("<li><code>{key}</code>s can be whatever you like up to 512 bytes long (good enough for most crypto keys).</li>");
-    sb.AppendLine("<ul>");
-    sb.AppendLine("<li>But as a good practice, it should be at least 16 bytes long.</li>");
-    sb.AppendLine("<li>As a convenience, there is <a href=\"/key\">/key</a> which generates GUIDs.</li>");
-    sb.AppendLine("</ul>");
-    sb.AppendLine("<li>Data is retrieved exactly as it is stored - if you <code>GET</code> a valid key, you <code>GET</code> the data.</li>");
-    sb.AppendLine("<li>But YOU can always encrypt the data before you store it with the <em>key</em>.</li>");
-    sb.AppendLine("</ul>");
-    sb.AppendLine($"<p>This <code>synk</code> instance is provided by {GlobalConfig.siteInformation}</p>");
-    GlobalStatic.GeneratePageFooter(sb);
-    return Results.Text(sb.ToString(), "text/html");
+  
+    return Results.Text(GlobalStatic.staticAboutPage, "text/html");
 });
 
 
@@ -76,8 +51,15 @@ app.MapGet("/key", (HttpContext httpContext) =>
 {
     string fn = "/key"; DBg.d(LogLevel.Trace, fn);
     Guid id = Guid.NewGuid();
-    string key = id.ToString();
-    return Results.Text(key, "text/plain");
+    
+    string guid = id.ToString();
+    
+    string threeword = GlobalStatic.ThreeWords();
+    
+    // generate a valid 512 bit key suitable for use as a private key
+    string randomkey = GlobalStatic.RandomHexKey();
+
+    return Results.Text($"{guid}\n{threeword}\n{randomkey}", "text/plain");
 }).AllowAnonymous();
 
 // endpoint that adds a blobkey and stores/updates its data
@@ -99,7 +81,7 @@ app.MapPut("/blob/{key}", async (HttpContext httpContext, string key) =>
     }
     long payloadSize = httpContext.Request.ContentLength ?? 0;
     // if there is no Put data, return a 400
-    if (payloadSize == null || payloadSize == 0)
+    if (payloadSize == 0)
     {
         DBg.d(LogLevel.Error, $"No Data provided to {key}..");
         return Results.StatusCode(StatusCodes.Status400BadRequest);
