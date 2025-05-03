@@ -33,7 +33,7 @@ app.UseRouting();
 app.MapGet("/about", (HttpContext httpContext) =>
 {
     string fn = "/about"; DBg.d(LogLevel.Trace, fn);
-  
+
     return Results.Text(GlobalStatic.staticAboutPage, "text/html");
 });
 
@@ -51,11 +51,11 @@ app.MapGet("/key", (HttpContext httpContext) =>
 {
     string fn = "/key"; DBg.d(LogLevel.Trace, fn);
     Guid id = Guid.NewGuid();
-    
+
     string guid = id.ToString();
-    
+
     string threeword = GlobalStatic.ThreeWords();
-    
+
     // generate a valid 512 bit key suitable for use as a private key
     string randomkey = GlobalStatic.RandomHexKey();
 
@@ -90,7 +90,7 @@ app.MapPut("/blob/{key}", async (HttpContext httpContext, string key) =>
     // if the content length is > however much free space in our synkstore
     // return http 413
     long currentStoreSize = GlobalStatic.synkStoreSize();
-    if(currentStoreSize + payloadSize > GlobalConfig.maxSynkStoreSize)
+    if (currentStoreSize + payloadSize > GlobalConfig.maxSynkStoreSize)
     {
         DBg.d(LogLevel.Error, $"Blob store size {GlobalStatic.PrettySize(currentStoreSize)} (existing) + {GlobalStatic.PrettySize(payloadSize)} (new) is larger than MAX {GlobalStatic.PrettySize(GlobalConfig.maxSynkStoreSize)}");
         return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
@@ -139,11 +139,53 @@ app.MapGet("/blob/{key}", (HttpContext httpContext, string key) =>
     byte[]? data = blobController.ReadBlobFile(key);
     if (data == null)
     {
+        DBg.d(LogLevel.Error, $"Blob key {key} not found");
         return Results.NoContent();
     }
     else
     {
         return Results.File(data, "application/octet-stream");
+    }
+}).AllowAnonymous();
+
+// a DELETE endpoint that deletes the blob file for the provided key
+app.MapDelete("/blob/{key}", (HttpContext httpContext, string key) =>
+{
+    string fn = "/blob"; DBg.d(LogLevel.Trace, fn);
+
+    if (blobController.IsUrlEncoded(key))
+    {
+        // decode the key
+        key = blobController.UrlDecode(key);
+    }
+
+    // we allow keys a max length of 512 characters
+    if (key.Length > 512)
+    {
+        DBg.d(LogLevel.Error, $"Blob key {key} is too long");
+        return Results.StatusCode(StatusCodes.Status400BadRequest);
+    }
+
+    // delete the blob file
+    try
+    {
+        blobController.DeleteBlobFile(key);
+        return Results.Ok();
+    }
+    catch (Exception ex)
+    {
+        // DeleteBlobFile throws KeyNotFoundException if the key is not found - return http no data
+        if (ex is KeyNotFoundException)
+        {
+            DBg.d(LogLevel.Error, $"Blob key {key} not found");
+            return Results.NoContent();
+        }
+        else
+        {
+
+            DBg.d(LogLevel.Error, $"Exception occurred: {ex}");
+            return Results.StatusCode(StatusCodes.Status500InternalServerError);
+        }
     }
 }).AllowAnonymous();
 

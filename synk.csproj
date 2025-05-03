@@ -34,12 +34,19 @@
   <ItemGroup>
     <Content Remove="synkstore/**" />
     <None Remove="synkstore/**" />
+    <Content Remove="testin/**" />
+    <None Remove="testin/**" />
+    <Content Remove="synk_test_tmp/**" />
+    <None Remove="synk_test_tmp/**" />
   </ItemGroup>
 <ItemGroup>
     <Content Include="icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="synk_test.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ext_test.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

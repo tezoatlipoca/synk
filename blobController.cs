@@ -130,6 +130,35 @@ namespace synk
             }
         }
 
+        // delete blob file
+        static public void DeleteBlobFile(string blobKey)
+        {
+            string fn = "DeleteBlobFile";
+            DBg.d(LogLevel.Trace, fn);
+            
+            // check if the blobKey exists
+            if (blobKeys.ContainsKey(blobKey))
+            {
+                string blobFile = Path.Combine(GlobalConfig.synkStore!, blobKeys[blobKey]);
+                if (File.Exists(blobFile))
+                {
+                    File.Delete(blobFile);
+                    SaveBlobKeys();
+                    DBg.d(LogLevel.Debug, $"Blob file {blobFile} deleted for key {blobKey}");
+                }
+                else
+                {
+                    DBg.d(LogLevel.Error, $"Blob file {blobFile} does not exist for key {blobKey}");
+                    throw new FileNotFoundException($"Blob file {blobFile} does not exist for key {blobKey}");
+                }
+            }
+            else
+            {
+                DBg.d(LogLevel.Error, $"Blob key {blobKey} does not exist");
+                throw new KeyNotFoundException($"Blob key {blobKey} does not exist");
+            }
+        }
+
         // method that returns true/false if the provided value is Url encoded
         static public bool IsUrlEncoded(string original)
         {
